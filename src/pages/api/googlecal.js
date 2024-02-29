@@ -1,10 +1,11 @@
-// pages/api/google-calendar.js
-
 import { authenticate } from '@google-cloud/local-auth'
 import { google } from 'googleapis'
+const path = require('path')
+const fs = require('fs').promises
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
-const CREDENTIALS_PATH = '/Users/oliverlundin/Local Documents/github/nextjs12_calendar/credentials.json' // Update the path as necessary
+const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json') // Update the path as necessary
+
 const TOKEN_PATH = 'token.json' // Update the path as necessary
 
 export default async function handler(req, res) {
@@ -60,12 +61,13 @@ async function saveCredentials(client) {
 		const keysContent = process.env.CREDENTIALS_JSON // Assuming you set your credentials JSON as an environment variable
 		const keys = JSON.parse(keysContent)
 		const key = keys.installed || keys.web
-		savedCredentialsPayload = JSON.stringify({
+		const payload = JSON.stringify({
 			type: 'authorized_user',
 			client_id: key.client_id,
 			client_secret: key.client_secret,
 			refresh_token: client.credentials.refresh_token,
 		})
+		await fs.writeFile(TOKEN_PATH, payload)
 	} catch (error) {
 		console.error('Error saving credentials:', error)
 	}
@@ -77,15 +79,22 @@ async function saveCredentials(client) {
  * @return {Promise<OAuth2Client|null>}
  */
 async function loadSavedCredentialsIfExist() {
+	// try {
+	// 	if (savedCredentialsPayload) {
+	// 		const credentials = JSON.parse(savedCredentialsPayload)
+	// 		return google.auth.fromJSON(credentials)
+	// 	} else {
+	// 		return null
+	// 	}
+	// } catch (error) {
+	// 	console.error('Error loading credentials:', error)
+	// 	return null
+	// }
 	try {
-		if (savedCredentialsPayload) {
-			const credentials = JSON.parse(savedCredentialsPayload)
-			return google.auth.fromJSON(credentials)
-		} else {
-			return null
-		}
-	} catch (error) {
-		console.error('Error loading credentials:', error)
+		const content = await fs.readFile(TOKEN_PATH)
+		const credentials = JSON.parse(content)
+		return google.auth.fromJSON(credentials)
+	} catch (err) {
 		return null
 	}
 }

@@ -5,8 +5,10 @@ const fs = require('fs').promises
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json') // Update the path as necessary
-
 const TOKEN_PATH = 'token.json' // Update the path as necessary
+
+const TOKEN = process.env.TOKEN
+const CREDS = process.env.CREDS
 
 export default async function handler(req, res) {
 	try {
@@ -34,10 +36,10 @@ async function authorize() {
 			return client
 		}
 
-		const newClient = await authenticate({ scopes: SCOPES, keyfilePath: CREDENTIALS_PATH })
+		const newClient = await authenticate({ scopes: SCOPES, keyfilePath: CREDS })
 
 		if (newClient.credentials) {
-			await saveCredentials(newClient)
+			//await saveCredentials(newClient)
 			return newClient
 		}
 
@@ -56,22 +58,22 @@ let savedCredentialsPayload = null // Declare a variable to store the credential
  * @param {OAuth2Client} client
  * @return {void}
  */
-async function saveCredentials(client) {
-	try {
-		const keysContent = process.env.CREDENTIALS_JSON // Assuming you set your credentials JSON as an environment variable
-		const keys = JSON.parse(keysContent)
-		const key = keys.installed || keys.web
-		const payload = JSON.stringify({
-			type: 'authorized_user',
-			client_id: key.client_id,
-			client_secret: key.client_secret,
-			refresh_token: client.credentials.refresh_token,
-		})
-		await fs.writeFile(TOKEN_PATH, payload)
-	} catch (error) {
-		console.error('Error saving credentials:', error)
-	}
-}
+// async function saveCredentials(client) {
+// 	try {
+// 		const keysContent = process.env.CREDENTIALS_JSON // Assuming you set your credentials JSON as an environment variable
+// 		const keys = JSON.parse(keysContent)
+// 		const key = keys.installed || keys.web
+// 		const payload = JSON.stringify({
+// 			type: 'authorized_user',
+// 			client_id: key.client_id,
+// 			client_secret: key.client_secret,
+// 			refresh_token: client.credentials.refresh_token,
+// 		})
+// 		await fs.writeFile(TOKEN_PATH, payload)
+// 	} catch (error) {
+// 		console.error('Error saving credentials:', error)
+// 	}
+// }
 
 /**
  * Reads previously authorized credentials from the saved payload variable.
@@ -92,7 +94,7 @@ async function loadSavedCredentialsIfExist() {
 	// }
 	try {
 		//const content = await fs.readFile(TOKEN_PATH)
-		const credentials = JSON.parse(process.env.TOKEN)
+		const credentials = JSON.parse(TOKEN)
 		return google.auth.fromJSON(credentials)
 	} catch (err) {
 		return null

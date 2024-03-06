@@ -30,6 +30,7 @@ yarn-error.log*
 .env
 credentials.json
 token.json
+creds.json
 
 # vercel
 .vercel

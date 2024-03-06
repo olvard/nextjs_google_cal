@@ -1,102 +1,34 @@
-import { authenticate } from '@google-cloud/local-auth'
 import { google } from 'googleapis'
-const path = require('path')
-const fs = require('fs').promises
+import * as fs from 'fs'
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
-const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json') // Update the path as necessary
-const TOKEN_PATH = 'token.json' // Update the path as necessary
-
-const TOKEN = process.env.TOKEN
-const CREDS = process.env.CREDS
+const SERVICE_ACCOUNT_KEY = process.env.CREDS // Replace with the path to your service account key file
 
 export default async function handler(req, res) {
 	try {
 		console.log('inside server')
-		const auth = await authorize()
+		const auth = await getAuth()
 
-		if (auth) {
-			const events = await listEvents(auth)
-
-			res.status(200).json(events)
-		} else {
-			res.status(401).json({ error: 'Authentication failed' })
-		}
+		const events = await listEvents(auth)
+		res.status(200).json(events)
 	} catch (error) {
 		console.error('Error:', error)
 		res.status(500).json({ error: 'Internal server error' })
 	}
 }
 
-async function authorize() {
+async function getAuth() {
 	try {
-		const client = await loadSavedCredentialsIfExist()
+		const credentials = JSON.parse(SERVICE_ACCOUNT_KEY)
 
-		if (client) {
-			return client
-		}
+		const auth = new google.auth.GoogleAuth({
+			credentials,
+			scopes: SCOPES,
+		})
 
-		const newClient = await authenticate({ scopes: SCOPES, keyfilePath: CREDS })
-
-		if (newClient.credentials) {
-			//await saveCredentials(newClient)
-			return newClient
-		}
-
-		return null
+		return auth.getClient()
 	} catch (error) {
-		console.error('Authorization error:', error)
-		return null
-	}
-}
-
-let savedCredentialsPayload = null // Declare a variable to store the credentials payload
-
-/**
- * Serializes credentials to a variable.
- *
- * @param {OAuth2Client} client
- * @return {void}
- */
-// async function saveCredentials(client) {
-// 	try {
-// 		const keysContent = process.env.CREDENTIALS_JSON // Assuming you set your credentials JSON as an environment variable
-// 		const keys = JSON.parse(keysContent)
-// 		const key = keys.installed || keys.web
-// 		const payload = JSON.stringify({
-// 			type: 'authorized_user',
-// 			client_id: key.client_id,
-// 			client_secret: key.client_secret,
-// 			refresh_token: client.credentials.refresh_token,
-// 		})
-// 		await fs.writeFile(TOKEN_PATH, payload)
-// 	} catch (error) {
-// 		console.error('Error saving credentials:', error)
-// 	}
-// }
-
-/**
- * Reads previously authorized credentials from the saved payload variable.
- *
- * @return {Promise<OAuth2Client|null>}
- */
-async function loadSavedCredentialsIfExist() {
-	// try {
-	// 	if (savedCredentialsPayload) {
-	// 		const credentials = JSON.parse(savedCredentialsPayload)
-	// 		return google.auth.fromJSON(credentials)
-	// 	} else {
-	// 		return null
-	// 	}
-	// } catch (error) {
-	// 	console.error('Error loading credentials:', error)
-	// 	return null
-	// }
-	try {
-		//const content = await fs.readFile(TOKEN_PATH)
-		const credentials = JSON.parse(TOKEN)
-		return google.auth.fromJSON(credentials)
-	} catch (err) {
+		console.error('Error loading service account credentials:', error)
 		return null
 	}
 }
@@ -104,7 +36,7 @@ async function loadSavedCredentialsIfExist() {
 async function listEvents(auth) {
 	const calendar = google.calendar({ version: 'v3', auth })
 	const res = await calendar.events.list({
-		calendarId: '5f6aa2d22a8c4813f29b4fc16a12695bc1cf8930e6004e37fe65c17d3f90f047@group.calendar.google.com', // Replace with your calendar ID
+		calendarId: 'b3c47233db7d035dfbd4d0052f7224bbfb63cefd6de0d9d72a0c11123141913f@group.calendar.google.com',
 		timeMin: new Date().toISOString(),
 		maxResults: 10,
 		singleEvents: true,

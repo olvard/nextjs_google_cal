@@ -1,7 +1,7 @@
 import { google } from 'googleapis'
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
-const SERVICE_ACCOUNT_KEY = process.env.CREDS // Replace with the path to your service account key file
+const SERVICE_ACCOUNT_KEY = process.env.CREDS
 
 export default async function handler(req, res) {
 	try {

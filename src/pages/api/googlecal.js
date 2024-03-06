@@ -1,5 +1,4 @@
 import { google } from 'googleapis'
-import * as fs from 'fs'
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 const SERVICE_ACCOUNT_KEY = process.env.CREDS // Replace with the path to your service account key file
